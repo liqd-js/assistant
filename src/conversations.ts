@@ -1,4 +1,4 @@
-import AssistantBase from './base';
+import AssistantBase, { AssistantStream } from './base';
 
 const parseArgs = ( args: string ) => JSON.parse( args );
 const parseOutput = ( output: any ) => typeof output === 'string' ? output : JSON.stringify( output );
@@ -17,7 +17,7 @@ export default class AssistantConversations extends AssistantBase
         return messages.data.map( m => m.content[0] );
     }
 
-    async send( conversationID: string | undefined, message: string )
+    async send( conversationID: string | undefined, message: string ): Promise<{ conversationID: string, response: AssistantStream }>
     {
         if( !conversationID )
         {
@@ -32,41 +32,47 @@ export default class AssistantConversations extends AssistantBase
 
         let stream = await this.openai.beta.threads.runs.stream( conversationID!, { assistant_id: this.options.id });
 
-        let response = '', done = false;
+        let response = new AssistantStream(), done = false;
 
-        while( !done )
+        ( async() =>
         {
-            for await ( const { event, data } of stream )
+            while( !done )
             {
-                //console.log( event );
+                for await ( const { event, data } of stream )
+                {
+                    //console.log( event );
 
-                if( event === 'thread.message.delta' )
-                {
-                    //console.log( data.delta.content );
-                }
-                else if( event === 'thread.message.completed' )
-                {
-                    if( data.content[0].type === 'text' )
+                    if( event === 'thread.message.delta' )
                     {
-                        response = data.content[0].text.value;
+                        //console.log( data.delta.content );
+                        data.delta.content && response.push( data.delta.content );
+                    }
+                    else if( event === 'thread.message.completed' )
+                    {
+                        if( data.content[0].type === 'text' )
+                        {
+                            //response = data.content[0].text.value;
+                        }
+                    }
+                    else if( event === 'thread.run.requires_action' )
+                    {
+                        const outputs = await Promise.all( data.required_action!.submit_tool_outputs.tool_calls.map( async( call ) => (
+                        {
+                            tool_call_id    : call.id,
+                            output          : parseOutput( await this.options.functions?.[call.function.name]?.( parseArgs( call.function.arguments )) || null )
+                        })));
+
+                        stream = await this.openai.beta.threads.runs.submitToolOutputsStream( conversationID!, data.id, { tool_outputs: outputs, stream: true });
+                    }
+                    else if( event === 'thread.run.completed' )
+                    {
+                        done = true;
                     }
                 }
-                else if( event === 'thread.run.requires_action' )
-                {
-                    const outputs = await Promise.all( data.required_action!.submit_tool_outputs.tool_calls.map( async( call ) => (
-                    {
-                        tool_call_id    : call.id,
-                        output          : parseOutput( await this.options.functions?.[call.function.name]?.( parseArgs( call.function.arguments )) || null )
-                    })));
-
-                    stream = await this.openai.beta.threads.runs.submitToolOutputsStream( conversationID!, data.id, { tool_outputs: outputs, stream: true });
-                }
-                else if( event === 'thread.run.completed' )
-                {
-                    done = true;
-                }
             }
-        }
+
+            response.push( null );
+        });
 
         return { conversationID, response }
     }
