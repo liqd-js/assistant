@@ -1,0 +1,29 @@
+{
+  "name": "@liqd-js/assistant",
+  "version": "0.0.1",
+  "description": "",
+  "author": "radixxko",
+  "license": "MIT",
+  "main": "dist/assistant.js",
+  "types": "dist/assistant.d.ts",
+  "files": [
+    "dist/**/*"
+  ],
+  "scripts": {
+    "test": "ts-node test/test",
+    "build": "tsc",
+    "version": "npm i && tsc && npm publish --access public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/liqd-js/assistant.git"
+  },
+  "dependencies": {
+    "openai": "^4.40.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.8",
+    "dotenv": "^16.4.5",
+    "typescript": "^5.4.5"
+  }
+}
