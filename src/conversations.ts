@@ -44,8 +44,13 @@ export default class AssistantConversations extends AssistantBase
 
                     if( event === 'thread.message.delta' )
                     {
+                        if( data.delta.content?.[0].type === 'text' )
+                        {
+                            data.delta.content[0].text?.value && response.push( data.delta.content[0].text.value )
+                        }
                         //console.log( data.delta.content );
-                        data.delta.content && response.push( data.delta.content );
+                        //data.delta.content && response.push( data.delta.content );
+                        
                     }
                     else if( event === 'thread.message.completed' )
                     {
@@ -72,7 +77,7 @@ export default class AssistantConversations extends AssistantBase
             }
 
             response.push( null );
-        });
+        })();
 
         return { conversationID, response }
     }
