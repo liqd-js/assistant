@@ -8,6 +8,12 @@ export type AssistantOptions =
     functions?  : Record<string, Function>
 }
 
+export type AssistantConversationMessageOptions =
+{
+    context?    : string,
+    functions?  : Record<string, Function>
+}
+
 export class AssistantStream extends Readable
 {
     constructor( options?: ReadableOptions )

@@ -1,4 +1,4 @@
-import AssistantBase, { AssistantStream } from './base';
+import AssistantBase, { AssistantConversationMessageOptions, AssistantStream } from './base';
 
 const parseArgs = ( args: string ) => JSON.parse( args );
 const parseOutput = ( output: any ) => typeof output === 'string' ? output : JSON.stringify( output );
@@ -17,7 +17,7 @@ export default class AssistantConversations extends AssistantBase
         return messages.data.map( m => m.content[0] );
     }
 
-    async send( conversationID: string | undefined, message: string ): Promise<{ conversationID: string, response: AssistantStream }>
+    async send( conversationID: string | undefined, message: string, options: AssistantConversationMessageOptions = {} ): Promise<{ conversationID: string, response: AssistantStream }>
     {
         if( !conversationID )
         {
@@ -30,7 +30,11 @@ export default class AssistantConversations extends AssistantBase
 
         await this.openai.beta.threads.messages.create( conversationID!, { role: 'user', content: message });
 
-        let stream = await this.openai.beta.threads.runs.stream( conversationID!, { assistant_id: this.options.id });
+        let stream = await this.openai.beta.threads.runs.stream( conversationID!, 
+        {
+            assistant_id: this.options.id,
+            additional_instructions: options.context
+        });
 
         let response = new AssistantStream(), done = false;
 
@@ -64,7 +68,7 @@ export default class AssistantConversations extends AssistantBase
                         const outputs = await Promise.all( data.required_action!.submit_tool_outputs.tool_calls.map( async( call ) => (
                         {
                             tool_call_id    : call.id,
-                            output          : parseOutput( await this.options.functions?.[call.function.name]?.( parseArgs( call.function.arguments )) || null )
+                            output          : parseOutput( await ( options?.functions?.[call.function.name] ?? this.options.functions?.[call.function.name])?.( parseArgs( call.function.arguments )) || null )
                         })));
 
                         stream = await this.openai.beta.threads.runs.submitToolOutputsStream( conversationID!, data.id, { tool_outputs: outputs, stream: true });
