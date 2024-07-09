@@ -5,7 +5,8 @@ export type AssistantOptions =
 {
     id          : string,
     token       : string,
-    functions?  : Record<string, Function>
+    functions?  : Record<string, Function>,
+    debug?      : boolean
 }
 
 export type AssistantConversationMessageOptions =

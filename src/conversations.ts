@@ -7,7 +7,7 @@ export default class AssistantConversations extends AssistantBase
 {
     list()
     {
-
+        //this.openai.beta.threads
     }
 
     async messages( conversationID: string )
@@ -27,6 +27,8 @@ export default class AssistantConversations extends AssistantBase
             }
             )).id
         }
+
+        this.options.debug && console.log( 'Assistant prompt: ' + message );
 
         await this.openai.beta.threads.messages.create( conversationID!, { role: 'user', content: message });
 
@@ -65,11 +67,23 @@ export default class AssistantConversations extends AssistantBase
                     }
                     else if( event === 'thread.run.requires_action' )
                     {
-                        const outputs = await Promise.all( data.required_action!.submit_tool_outputs.tool_calls.map( async( call ) => (
+                        const outputs = await Promise.all( data.required_action!.submit_tool_outputs.tool_calls.map( async( call ) => 
                         {
-                            tool_call_id    : call.id,
-                            output          : parseOutput( await ( options?.functions?.[call.function.name] ?? this.options.functions?.[call.function.name])?.( parseArgs( call.function.arguments )) || null )
-                        })));
+                            try
+                            {
+                                const result = await ( options?.functions?.[call.function.name] ?? this.options.functions?.[call.function.name])?.( parseArgs( call.function.arguments ));
+
+                                this.options.debug && console.log( 'Assistant Action', { function: call.function.name, arguments: call.function.arguments, result });
+                                
+                                return { tool_call_id: call.id, output: parseOutput( result )}
+                            }
+                            catch( e )
+                            {
+                                this.options.debug && console.log( 'Assistant Action Error', { function: call.function.name, arguments: call.function.arguments, error: e });
+                            }
+
+                            return { tool_call_id: call.id, output: 'There was an error processing this action' }
+                        }));
 
                         stream = await this.openai.beta.threads.runs.submitToolOutputsStream( conversationID!, data.id, { tool_outputs: outputs, stream: true });
                     }
