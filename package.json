@@ -1,6 +1,6 @@
 {
   "name": "@liqd-js/assistant",
-  "version": "0.0.7",
+  "version": "0.1.0",
   "description": "",
   "author": "radixxko",
   "license": "MIT",
@@ -19,11 +19,11 @@
     "url": "git+https://github.com/liqd-js/assistant.git"
   },
   "dependencies": {
-    "openai": "^4.52.4"
+    "openai": "^5.10.2"
   },
   "devDependencies": {
-    "@types/node": "^20.14.10",
-    "dotenv": "^16.4.5",
-    "typescript": "^5.5.3"
+    "@types/node": "^24.1.0",
+    "dotenv": "^17.2.1",
+    "typescript": "^5.8.3"
   }
 }

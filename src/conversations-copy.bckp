@@ -85,7 +85,7 @@ export default class AssistantConversations extends AssistantBase
                             return { tool_call_id: call.id, output: 'There was an error processing this action' }
                         }));
 
-                        stream = await this.openai.beta.threads.runs.submitToolOutputsStream( conversationID!, /*data.id, */{ thread_id: data.thread_id, tool_outputs: outputs, stream: true });
+                        stream = await this.openai.beta.threads.runs.submitToolOutputsStream( conversationID!, data.id, { tool_outputs: outputs, stream: true });
                     }
                     else if( event === 'thread.run.completed' )
                     {
